@@ -1,26 +1,17 @@
-package josealdeguer.tfg;
+package josealdeguer.tfg.gobierno;
+
+import twitter4j.*;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import twitter4j.RateLimitStatus;
-import twitter4j.DirectMessage;
-import twitter4j.Query;
-import twitter4j.QueryResult;
-import twitter4j.StallWarning;
-import twitter4j.Status;
-import twitter4j.StatusDeletionNotice;
-import twitter4j.StatusListener;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
-import twitter4j.TwitterFactory;
-import twitter4j.TwitterStream;
-import twitter4j.TwitterStreamFactory;
 
 public class App {
     private static Connect conexion = new Connect();
@@ -30,10 +21,91 @@ public class App {
         Twitter twitter = new TwitterFactory().getInstance();
 
         try {
-            // Query query = new Query("(independencia) OR (independentismo)");
-            Query query = new Query("(independencia) OR (independentismo) OR (separatistas)");
-            // Query query = new Query("violencia de genero");
+
+            Long last_tweet_id = -1L;
+
+            try{
+                String sql = "SELECT tweet_id FROM tweets_corona_mentions WHERE tweet_id = (SELECT MAX(tweet_id) FROM tweets_corona_mentions);";
+//                String sql = "SELECT tweet_id FROM tweets_corona_mentions WHERE tweet_id = (SELECT MIN(tweet_id) FROM tweets_corona_mentions);";
+                PreparedStatement pst = conexion.getPreparedStatement(sql);
+
+                ResultSet rs = conexion.getFromDB(pst);
+                while(rs.next()) {
+                    last_tweet_id= rs.getLong("tweet_id");
+                }
+//                System.out.println(last_tweet_id);
+                conexion.closeConnection();
+            } catch(SQLException e){
+                System.out.println("Error sql: "+e.getMessage());
+                e.printStackTrace();
+            } finally {
+                conexion.closeConnection();
+            }
+
+            Query query = new Query(
+                            "(iglesias gobierno) OR" +
+                            "(@PabloIglesias gobierno) OR" +
+                            "(Podemos gobierno) OR" +
+
+                            "(sanchez gobierno) OR" +
+                            "(@sanchezcastejon gobierno) OR" +
+                            "(PSOE gobierno) OR" +
+
+                            "(casado gobierno) OR" +
+                            "(@pablocasado_ gobierno) OR" +
+                            "(PP gobierno) OR" +
+                            "(@populares gobierno) OR" +
+
+                            "(abascal gobierno) OR" +
+                            "(@Santi_ABASCAL gobierno) OR" +
+                            "(VOX gobierno) OR" +
+                            "(@vox_es gobierno) OR" +
+
+                            "(@eldiarioes gobierno) OR" +
+                            "(@el_pais gobierno) OR" +
+                            "(@larazon_es gobierno) OR" +
+                            "(@abc_es gobierno)"
+
+
+//                                    "(@sanidadgob) OR " +
+//                                    "(#@desdelamoncloa) OR " +
+//                                    "(fernando simon) OR " +
+//                                    "(@saludpublicaes) OR " +
+//                                    "(#ni?osenlacalle) OR " +
+//                                    "(#irresponsables) OR " +
+//                                    "(#StopConfinamientoEspana) OR " +
+//                                    "(#cacerolada) OR " +
+//                                    "(#SanchezQueremosTest) OR " +
+//                                    "(#VerguenzaDeOposicion) OR " +
+//                                    "(#SanchezQueremosTest) OR " +
+//                                    "(#SanchezMarchateYa) OR " +
+//                                    "(#cuarentenaesp) OR " +
+//                                    "(#PaguitaAbascal) OR " +
+//                                    "(#NoNosCallaran) OR " +
+//                                    "(#SanchezVeteATuCasa) OR " +
+//                                    "(#NinosEnLaCalleYA) OR " +
+////                                    "(#gobiernogranhermano) OR " +
+////                                    "(#loestamosconsiguiendo) OR " +
+////                                    "(#SanchezVeteACasa) OR " +
+////                                    "(#Ni?osALaCallESP) OR " +
+////                                    "(#Espa?aNoTeQuiere) OR " +
+////                                    "(#YoConIglesias) OR " +
+////                                    "(#YOAPOYOALGOBIERNO) OR " +
+////                                    "(#IglesiasVetaYa) OR " +
+////                                    "(#SanchezVeteYa) OR " +
+////                                    "(#paguita) OR " +
+////                                    "(#alopresidente) OR " +
+//                                    "(#pedrosanchez) OR " +
+////                                    "(#EsteVirusLoParamosUnidos) OR " +
+//                                    "(Pedro Sanchez) OR " +
+//                                    "(PSOE) OR " +
+//                                    "(@sanchezcastejon) "
+////                                    "(#gobiernodimision) "
+                                );
             query.count(100);
+            query.lang("es");
+//            query.sinceId(1255099352428810240L);
+            query.maxId(1255099365410119681L-1);
             QueryResult result;
 
             do {
@@ -53,14 +125,28 @@ public class App {
                 for(int i= 0; i<tweets.size(); i++){
                     Status tweet = tweets.get(i);
                     if(!tweet.isRetweet()){
-                        String sql = "INSERT INTO tweets (tweet_id, text, user, gathered_at, fecha, isRetweet, retweets, favorites, user_location, country, city) " +
-                                "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                        String sql = "INSERT INTO tweets_corona_mentions (tweet_id, text, user, gathered_at, fecha, isRetweet, retweets, favorites, user_location, country, city, contains_media, latitude, longitude) " +
+                                "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                         try{
                             DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                             Date date = new Date();
 
-                            // tweet.repl
+
+//                            for(int x=0; i<tweet.getMediaEntities().length; x++) {
+////                                tweet.getMediaEntities()
+//                                System.out.println(tweet.getMediaEntities()[i].getType());
+//                            }
+//                            System.out.println(tweet.getMediaEntities().length);
+//                            if(tweet.getMediaEntities().length > 0) {
+//                                System.out.println(tweet.getId());
+//                                System.out.println(tweet.getMediaEntities()[0].getType());
+//                                System.out.println(tweet.getMediaEntities()[0].getMediaURL());
+//                            }
+
+
+//                            System.out.println(new java.sql.Timestamp(tweet.getCreatedAt().getTime()));
+
                             PreparedStatement pst = conexion.getPreparedStatement(sql);
                             pst.setLong(1, tweet.getId());
                             pst.setString(2, tweet.getText());
@@ -75,9 +161,19 @@ public class App {
                                 pst.setString(10, tweet.getPlace().getCountry());
                                 pst.setString(11, tweet.getPlace().getName());
                             } else {
-                                pst.setString(10, "");
-                                pst.setString(11, "");
+                                pst.setString(10, null);
+                                pst.setString(11, null);
                             }
+                            pst.setBoolean(12, tweet.getMediaEntities().length > 0);
+                            if (tweet.getGeoLocation() != null) {
+                                pst.setDouble(13, tweet.getGeoLocation().getLatitude());
+                                pst.setDouble(14, tweet.getGeoLocation().getLongitude());
+                            } else {
+                                pst.setString(13, null);
+                                pst.setString(14, null);
+                            }
+
+
 
                             conexion.addToDB(pst);
                             conexion.closeConnection();
@@ -98,7 +194,7 @@ public class App {
 //						}
                     }
                 }
-                TimeUnit.SECONDS.sleep(5);
+                TimeUnit.SECONDS.sleep(6);
             } while ((query = result.nextQuery()) != null);
             System.exit(0);
         } catch (TwitterException te) {

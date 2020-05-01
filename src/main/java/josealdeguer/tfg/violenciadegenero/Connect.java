@@ -1,18 +1,13 @@
-package josealdeguer.tfg;
+package josealdeguer.tfg.violenciadegenero;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class Connect {
     static Connection connection = null;
 //    static PreparedStatement preparedSt = null;
 
     protected Connection getConnection() {
-        String url = "jdbc:mysql://localhost:3306/tweets_17_02";
-        // String url = "jdbc:mysql://localhost:3306/tweets_vg";
+        String url = "jdbc:mysql://localhost:3306/tweets_vg";
         String user="root";
         String password="holamundo123";
 
